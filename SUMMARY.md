@@ -4,5 +4,5 @@
 * [Introduction](Introduction/Introduction.md)
    * [CoreOS Overview](Introduction/coreos_overview.md)
 * Getting Started
-   * Preparing Virtual Lab
+   * [Preparing Virtual Lab](Getting-Started/preparing_virtual_lab.md)
 
