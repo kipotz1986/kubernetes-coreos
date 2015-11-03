@@ -76,7 +76,7 @@ master.yaml
 users:
   - name: core
     ssh-authorized-keys:
-      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCju4ek8z9kN12F4eC1FEitmruNaGA8v5Tm+w/Ed64jAzEz1TQuZivTv6rR6c+jHjSwfYCBISW/JXnAbBkxfWeJ4xU4VII2w+Ck2BENEnc9E0MRZOTZYwcG+vb$
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCju4ek8z9kN12F4eC1FEitmruNaGA8v5Tm+w/Ed64jAzEz1TQuZivTv6rR6c+jHjSwfYCBISW/JXnAbBkxfWeJ4xU4VII2w+Ck2BENEnc9E0MRZOTZYwcG+vbvvD+GElfsW0Eh9j7Yh9X2PmXD63Yvcdiua95kOcGMBrETtjj/t8HbuA27OLf5xDxYN+Va6wcAZBCFTOSz2v31tVvCzF693ZFpqqiGrzpH1PGbJ7knHLPEpq7ihmaNpQ9yUIiYZaelWXTLR44QtOpEulYe/FViAQTkeRImAx+OKD6MQFF4ZVT+DUccP4XG6dhV2C4FePNxv4WFCZlZskRWUl4ilu6b root@workstation
     groups:
       - sudo
     shell: /bin/bash
@@ -235,3 +235,142 @@ coreos:
     group: alpha
     reboot-strategy: off
 ```
+
+You will notice that in ssh-authorized keys definition section. Remember that you've already make a note about your key previously. Use your SSH key as a value for this configuration. 
+Now it's time to create cloud-config for our first minion.
+
+```vi /usr/share/nginx/www/minion1.yaml```
+
+minion1.yaml
+```
+#cloud-config
+users:
+  - name: core
+    ssh-authorized-keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCju4ek8z9kN12F4eC1FEitmruNaGA8v5Tm+w/Ed64jAzEz1TQuZivTv6rR6c+jHjSwfYCBISW/JXnAbBkxfWeJ4xU4VII2w+Ck2BENEnc9E0MRZOTZYwcG+vbvvD+GElfsW0Eh9j7Yh9X2PmXD63Yvcdiua95kOcGMBrETtjj/t8HbuA27OLf5xDxYN+Va6wcAZBCFTOSz2v31tVvCzF693ZFpqqiGrzpH1PGbJ7knHLPEpq7ihmaNpQ9yUIiYZaelWXTLR44QtOpEulYe/FViAQTkeRImAx+OKD6MQFF4ZVT+DUccP4XG6dhV2C4FePNxv4WFCZlZskRWUl4ilu6b root@workstation
+    groups:
+      - sudo
+    shell: /bin/bash
+write-files:
+  - path: /opt/bin/wupiao
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # [w]ait [u]ntil [p]ort [i]s [a]ctually [o]pen
+      [ -n "$1" ] && [ -n "$2" ] && while ! curl --output /dev/null \
+        --silent --head --fail \
+        http://${1}:${2}; do sleep 1 && echo -n .; done;
+      exit $?
+hostname: minion1
+coreos:
+  etcd2:
+    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    advertise-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    initial-cluster: master=http://172.16.4.12:2380
+    proxy: on
+  fleet:
+    metadata: "role=node"
+  units:
+    - name: systemd-networkd.service
+      command: stop
+    - name: 00-ens160.network
+      runtime: true
+      content: |
+        [Match]
+        Name=ens160
+
+        [Network]
+        DNS=203.142.82.222
+        Address=172.16.4.13/24
+        Gateway=172.16.4.1
+    - name: down-interfaces.service
+      command: start
+      content: |
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/bin/ip link set ens160 down
+        ExecStart=/usr/bin/ip addr flush dev ens160
+    - name: systemd-networkd.service
+      command: restart
+    - name: fleet.service
+      command: start
+    - name: flanneld.service
+      command: start
+      drop-ins:
+        - name: 50-network-config.conf
+          content: |
+            [Unit]
+            Requires=etcd2.service
+            After=etcd2.service
+            [Service]
+            ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{"Network":"10.244.0.0/16" }'
+    - name: docker.service
+      command: start
+    - name: setup-network-environment.service
+      command: start
+      content: |
+        [Unit]
+        Description=Setup Network Environment
+        Documentation=https://github.com/kelseyhightower/setup-network-environment
+        Requires=network-online.target
+        After=network-online.target
+        [Service]
+        ExecStartPre=-/usr/bin/mkdir -p /opt/bin
+        ExecStartPre=/usr/bin/curl -L -o /opt/bin/setup-network-environment -z /opt/bin/setup-network-environment https://github.com/kelseyhightower/setup-network-envi$
+        ExecStartPre=/usr/bin/chmod +x /opt/bin/setup-network-environment
+        ExecStart=/opt/bin/setup-network-environment
+        RemainAfterExit=yes
+        Type=oneshot
+    - name: kube-proxy.service
+    command: start
+      content: |
+        [Unit]
+        Description=Kubernetes Proxy
+        Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+        Requires=setup-network-environment.service
+        After=setup-network-environment.service
+        [Service]
+        ExecStartPre=/usr/bin/curl -L -o /opt/bin/kube-proxy -z /opt/bin/kube-proxy https://storage.googleapis.com/kubernetes-release/release/v1.0.3/bin/linux/amd64/ku$
+        ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-proxy
+        # wait for kubernetes master to be up and ready
+        ExecStartPre=/opt/bin/wupiao 172.16.4.12 8080
+        ExecStart=/opt/bin/kube-proxy \
+        --master=172.16.4.12:8080 \
+        --logtostderr=true
+        Restart=always
+        RestartSec=10
+    - name: kube-kubelet.service
+      command: start
+      content: |
+        [Unit]
+        Description=Kubernetes Kubelet
+        Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+        Requires=setup-network-environment.service
+        After=setup-network-environment.service
+        [Service]
+        EnvironmentFile=/etc/network-environment
+        ExecStartPre=/usr/bin/curl -L -o /opt/bin/kubelet -z /opt/bin/kubelet https://storage.googleapis.com/kubernetes-release/release/v1.0.3/bin/linux/amd64/kubelet
+        ExecStartPre=/usr/bin/chmod +x /opt/bin/kubelet
+        # wait for kubernetes master to be up and ready
+        ExecStartPre=/opt/bin/wupiao 172.16.4.12 8080
+        ExecStart=/opt/bin/kubelet \
+        --address=0.0.0.0 \
+        --port=10250 \
+        --hostname-override=${DEFAULT_IPV4} \
+        --api-servers=172.16.4.12:8080 \
+        --allow-privileged=true \
+        --logtostderr=true \
+        --cadvisor-port=4194 \
+        --healthz-bind-address=0.0.0.0 \
+        --healthz-port=10248
+        Restart=always
+        RestartSec=10
+  update:
+    group: alpha
+    reboot-strategy: off
+```
+
+Cloud Config for the next minion is same as our first minion, you can copy minon1.yaml to create minon2.yaml etc. but at this point please don'tforget to change hostname and IP address definition from 172.16.4.13 to related IP address in the table we've already discussed.
+
+Seems like everythin is prepared for CoreOS Installation. Now let's Fire up our CoreOS Cluster.
+
