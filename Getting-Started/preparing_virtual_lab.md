@@ -15,6 +15,8 @@ In this lab we're going to build a CoreOS cluster that have 4 CoreOS nodes, And 
 
 For workstation we are going to install Debian 7 and for other we are going to install CoreOS on it. Debian installation is not covered in this tutorial.
 
+### Build and Publish Kubernetes Binaries
+
 
 First we assume that you've already installed debian on workstacion vm and all basic functionality is working properly like networking that can connect to the internet.
 Next, weare going to install some basic package that would be required for this lab.
