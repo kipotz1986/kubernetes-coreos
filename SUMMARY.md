@@ -2,4 +2,5 @@
 
 * [Introduction](README.md)
 * [Introduction](Introduction/CoreOS.md)
+   * CoreOS Overview
 
