@@ -6,5 +6,5 @@
 * Getting Started
    * [Preparing Virtual Lab](Getting-Started/preparing_virtual_lab.md)
    * [CoreOS Installation](Getting-Started/coreos_installation.md)
-   * Kubernetes Configuration
+   * [Kubernetes Configuration](Getting-Started/kubernetes_configuration.md)
 
