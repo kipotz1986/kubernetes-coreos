@@ -1,6 +1,7 @@
 # Summary
 
 * [Introduction](README.md)
+   * Let's Play
 * [Introduction](Introduction/Introduction.md)
    * [CoreOS Overview](Introduction/coreos_overview.md)
 * Getting Started
