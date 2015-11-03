@@ -1,6 +1,6 @@
 # Summary
 
 * [Introduction](README.md)
-* [Introduction](Introduction/CoreOS.md)
+* [Introduction](Introduction/Introduction.md)
    * [CoreOS Overview](Introduction/coreos_overview.md)
 
