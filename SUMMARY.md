@@ -1,4 +1,4 @@
 # Summary
 
-* [test](test.md)
+* [Getting Started](test.md)
 
