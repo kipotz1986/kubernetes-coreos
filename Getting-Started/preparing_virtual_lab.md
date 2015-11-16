@@ -35,8 +35,8 @@ now clone kubernetes repository to your current working directory.
 
 Next we can build kubernetes binaries.
 
-```cd kubernetes/cluster/ubuntu/```   
-```./build.sh```
+```cd kubernetes/cluster/ubuntu/ && ./build.sh```  
+
 
 you can see now you have binaries folder in your current working directory. Now copy binaries folder to /usr/share/nginx/www/ folder.
 
