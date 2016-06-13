@@ -51,7 +51,7 @@ after you successfully login now you can dive into your master node. Please chec
 
 you'll notice that there is docker.0 interface and flannel interface.
 
-Flannel is a software based overlay network. It allows for our docker container to communicate with another container accross cluster. Flannel is not the only one solution for overlaying network. We can use another SDN both hardware and software . Since Flannel is the quickest way to implement and highly tested with kubernetes, we use it for simplicity.
+Flannel is a software based overlay network. It allows for our docker container to communicate with another container across cluster. Flannel is not the only one solution for overlaying network. We can use another SDN both hardware and software . Since Flannel is the quickest way to implement and highly tested with kubernetes, we use it for simplicity.
 
 now you can end ssh session from master and take a look for our minions. please check the network configuration and service. if network is not shown up and cannot ping to other node and to the internet, it might be a problem with cloud-config file in the network definitions. Because somehow different network hardware can cause a different interface name. If the network is up and running well but no additional service like docker and flannel started, it might be still downloading the container. From now you have to wait, while waiting you can check and monitor your service availability
 with ifconfig command.
